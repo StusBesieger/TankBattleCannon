@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic; 
 using Modding;
-using Modding.Blocks; 
+using Modding.Blocks;
+using Modding.Serialization;
 using UnityEngine;
 
 namespace TBCStusSpace
@@ -26,7 +27,8 @@ namespace TBCStusSpace
             {74, typeof(NoArmorScript) },
             //カメラブロック
             {58, typeof(NoArmorScript) },
-
+            //ピンブロック
+            {57, typeof(NoArmorScript) },
 
         };
         public override string Name
@@ -82,35 +84,77 @@ namespace TBCStusSpace
     {
 
     }
-    public class ArmorScript : ModBlockBehaviour
+    public class ArmorScript : BlockScript
     {
-        private Rigidbody rigidbody;
-        private ConfigurableJoint jointchange;
-        private HingeJoint hingejointchange;
+        public Rigidbody rigidbody;
+        public ConfigurableJoint jointchange;
+        public HingeJoint hingejointchange;
+        private BlockBehaviour bb;
+        public MSlider ArmorSlider;
 
-        private MSlider ArmorSlider;
+        public ConfigurableJoint jointobject;
 
-        private ConfigurableJoint jointobject;
+        public ArmorScript JG;
+
+        //メソッドを設定するための変数
+        public bool isSimulatingFirstFrame = true;
+        public bool isBuildingFirstFrame = true;
+        public bool isBuildingFixedUpdate = true;
 
         public float armorthickness = 25f;
         public float armorvalue = 25f;
-        private float changevalue = 0f;
-        private float jointvalue = 0f;
-        private float jointvalue2 = 0f;
-        private float hingejointvalue = 0.0f;
-        private float Dmass = 1.0f;
-        private int i = 1;
+        public float changevalue = 1f;
+        public float jointvalue = 1f;
+        public float jointvalue2 = 1f;
+        public float hingejointvalue = 1.0f;
+        public float Dmass = 1.0f;
+        public int i = 1;
+        
+        //各メソッド設定
+
         public void FixedUpdate()
         {
+            if(bb.isSimulating)
+            {
+
+            }
+            else
+            {
+                
+            }
         }
         public void Update()
         {
+            if (bb.isSimulating)
+            {
+                if(isSimulatingFirstFrame)
+                {
+                    isSimulatingFirstFrame = false;
+                    OnSimulateStart();
+                }
+            }
+            else
+            {
+                if(isBuildingFirstFrame)
+                {
+                    isBuildingFirstFrame = false;
+                    OnBlockPlaced();
+                    if (!isSimulatingFirstFrame)
+                    {
+                        isSimulatingFirstFrame = true;
+                    }
+                }
+                BuildingUpdate();
+            }
         }
+        public void Awake()
+        {
+            SafeAwake();
+
+        }
+
         public override void OnBlockPlaced()
         {
-            
-            Debug.Log("placed");
-            
             //重量、接続強度をいじるための準備
             rigidbody = GetComponent<Rigidbody>();
             jointchange = GetComponent<ConfigurableJoint>();
@@ -136,20 +180,16 @@ namespace TBCStusSpace
         }
         public override void OnSimulateStart()
         {
-            base.OnSimulateStart();
-            Debug.Log("Start");
+            //根本接続、重量の変更
             StartCoroutine(StateChange(armorvalue));
         }
-        public override void BuildingFixedUpdate()
+        public override void BuildingUpdate()
         {
-            base.BuildingFixedUpdate();
+           
             if(armorvalue != ArmorSlider.Value)
             {
+                armorthickness = ArmorSlider.Value;
                 armorvalue = ArmorSlider.Value;
-            }
-           
-            if(changevalue != (float)(Math.Log(armorvalue, 25f)))
-            {
                 changevalue = (float)(Math.Log(armorvalue, 25f));
                 if (this.transform.Find("TriggerForJoint2"))
                 {
@@ -161,31 +201,16 @@ namespace TBCStusSpace
         }
         public override void SafeAwake()
         {
+            base.SafeAwake();
+            bb = GetComponent<BlockBehaviour>();
             //装甲厚のスライダーと値を取得
-            ArmorSlider = ((ModBlockBehaviour)this).AddSlider("Armor thickness", "ArmorThickness", armorthickness, 10f, 175f);
-            ArmorSlider.DisplayInMapper = true;
+            ArmorSlider = bb.AddSlider("Armor thickness", "armorvalue", 25f, 10f, 175f);
+            
         }
-        public void Awake()
-        {
-            Debug.Log("Awake");
-        }
-        //public void BlockStateChanger(float armorvalue)
-        //{
-        //    //根本接続の強度はビルド中と、シミュ開始後に1回ずつ処理されてしまうためシミュ開始後遅れて処理を行う
-        //    changevalue = (float)(Math.Log(armorvalue, 25f));
-        //    if (StatMaster.startingMachines)
-        //    {
-        //        StartCoroutine(StateChange(armorvalue));
-        //    }
-        //    //頭接続はシミュ開始後はできないため別でビルド中に行う
-        //    if (!StatMaster.startingMachines)
-        //    {
-        //    }
 
-        //}
         public IEnumerator StateChange(float armorvalue)
         {
-            yield return new WaitForFixedUpdate();
+                yield return new WaitForFixedUpdate();
             if ((float)(Math.Log(armorvalue, 25f)) < 0.5f)
             {
                 changevalue = 0.5f;
@@ -196,7 +221,7 @@ namespace TBCStusSpace
             }
             if (jointchange)
             {
-                if (float.IsInfinity(jointchange.breakForce))
+                if (Mathf.Infinity == jointchange.breakForce)
                 {
                     jointchange.breakForce = 60000f / changevalue;
                     jointchange.breakTorque = 60000f / changevalue;

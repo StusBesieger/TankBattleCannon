@@ -136,6 +136,7 @@ namespace TBCStusSpace
         public float APdis;
         public float APSp;
         public float APSpeed = 0.0f;
+        private float Penetrationdistance;
         public Vector3 ProjectileSp;
         public float APFixedSp;
         public float Projectilemath;
@@ -228,7 +229,7 @@ namespace TBCStusSpace
         //ŠÑ’Ê”»’è
         public void Penetrationjudgment()
         {
-
+            Penetrationdistance = hit.distance;
             APdis = Vector3.Distance(this.transform.position+ APDirection, hit.point);
             APSp = Vector3.Distance(this.rigidbody.velocity, hitrigidbody.velocity);
             if (hitangle < 80)
@@ -264,13 +265,16 @@ namespace TBCStusSpace
         {
             ProjectileSp = this.rigidbody.velocity.normalized;
             mCollider.enabled = false;
-            Projectilemath = APtime / Time.deltaTime;
-
-            for (var i =0; i < 2; i++)
+            Projectilemath = (APtime - 1f) / Time.deltaTime;
+            if (APFixedSp * 0.5f > APtime)
+            {
+                this.rigidbody.velocity = (Penetrationdistance + 1f) / (Time.deltaTime * 2f) * APDirection;
+            }
+            for (var i =0; i < 3; i++)
             {
                 yield return new WaitForFixedUpdate();
             }
-            hitrigidbody.AddForce(APSp * APDirection*(float)Math.Log10(StandardPenetration), ForceMode.Impulse);
+            hitrigidbody.AddForce(APSp * APDirection*((float)Math.Log(APtime, 4f)+1.5f), ForceMode.Impulse);
             if(APFixedSp*0.5f > APtime)
             {
                 this.rigidbody.velocity = new Vector3(ProjectileSp.x * Projectilemath, ProjectileSp.y * Projectilemath, ProjectileSp.z * Projectilemath);
