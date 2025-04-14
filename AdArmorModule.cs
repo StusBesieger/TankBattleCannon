@@ -109,6 +109,7 @@ namespace TBCStusSpace
         public float hingejointvalue = 1.0f;
         public float Dmass = 1.0f;
         public int i = 1;
+        public float massdata;
         
         //各メソッド設定
 
@@ -127,37 +128,71 @@ namespace TBCStusSpace
         {
             if (bb.isSimulating)
             {
-                if(isSimulatingFirstFrame)
-                {
-                    isSimulatingFirstFrame = false;
-                    OnSimulateStart();
-                }
+                //if (isSimulatingFirstFrame)
+                //{
+                //    isSimulatingFirstFrame = false;
+                //    OnSimulateStart();
+                //}
             }
             else
             {
-                if(isBuildingFirstFrame)
-                {
-                    isBuildingFirstFrame = false;
-                    OnBlockPlaced();
-                    if (!isSimulatingFirstFrame)
-                    {
-                        isSimulatingFirstFrame = true;
-                    }
-                }
+                //if (isBuildingFirstFrame)
+                //{
+                //    isBuildingFirstFrame = false;
+                //    OnBlockPlaced();
+                //    if (!isSimulatingFirstFrame)
+                //    {
+                //        isSimulatingFirstFrame = true;
+                //    }
+                //}
                 BuildingUpdate();
             }
         }
         public void Awake()
         {
             SafeAwake();
+            if (bb.isBuildBlock)
+            {
+                OnBlockPlaced();
+            }
+            else
+            {
+                OnSimulateStart();
+            }
 
         }
 
         public override void OnBlockPlaced()
         {
             //重量、接続強度をいじるための準備
-            rigidbody = GetComponent<Rigidbody>();
-            jointchange = GetComponent<ConfigurableJoint>();
+            if(bb == null)
+            {
+                bb = GetComponent<BlockBehaviour>();
+                if (bb == null)
+                {
+                    Debug.Log("TBCArmor error || Not Find BlockBehaviour");
+                }
+            }
+            else
+            {
+            }
+            if (StatMaster.isHosting || !StatMaster.isMP || StatMaster.isLocalSim)
+            {
+                if (rigidbody == null)
+                {
+                    rigidbody = GetComponent<Rigidbody>();
+                    Dmass = rigidbody.mass;
+                    if (rigidbody == null)
+                    {
+                        Debug.Log("TBCArmor error || Not Find Rigidbody");
+                    }
+                }
+            }
+
+            if(jointchange == null)
+            {
+                jointchange = GetComponent<ConfigurableJoint>();
+            }
             //貼り付けられたブロックがそれぞれ持っているか持っていないかを判定
             if (this.transform.Find("TriggerForJoint2"))
             {
@@ -176,7 +211,7 @@ namespace TBCStusSpace
             {
                 hingejointvalue = hingejointchange.breakForce;
             }
-            Dmass = rigidbody.mass;
+            
         }
         public override void OnSimulateStart()
         {
@@ -191,6 +226,7 @@ namespace TBCStusSpace
                 armorthickness = ArmorSlider.Value;
                 armorvalue = ArmorSlider.Value;
                 changevalue = (float)(Math.Log(armorvalue, 25f));
+                massdata = Dmass * armorvalue / 25f;
                 if (this.transform.Find("TriggerForJoint2"))
                 {
                     jointobject.breakForce = jointvalue2 / changevalue;
@@ -204,7 +240,7 @@ namespace TBCStusSpace
             base.SafeAwake();
             bb = GetComponent<BlockBehaviour>();
             //装甲厚のスライダーと値を取得
-            ArmorSlider = bb.AddSlider("Armor thickness", "armorvalue", 25f, 10f, 175f);
+            ArmorSlider = bb.AddSlider("Armor thickness", "armorvalue", 25f, 10f, 150f);
             
         }
 

@@ -122,13 +122,14 @@ namespace TBCStusSpace
                                 hitnumber = 1;
                             }
                             hitposition = Vector3.Distance(this.transform.position, hitColliders[i].transform.position) + 0.5f;
-                            rb.AddExplosionForce(HEForce / (hitposition * hitnumber), this.transform.position, HERadius, 0.0f, ForceMode.Impulse);
+                            rb.AddExplosionForce(HEForce / hitposition, this.transform.position, HERadius, 0.0f, ForceMode.Impulse);
                             ArmoS = hitColliders[i].GetComponent<ArmorScript>();
                             if (ArmoS)
                             {
-                                if (ArmoS.armorthickness < HEForce * 0.005f)
+                                if (ArmoS.armorthickness < HEForce * 0.1f)
                                 {
-                                    rb.AddExplosionForce(HEForce * 2f / (hitposition * hitnumber), this.transform.position, HERadius * 0.5f, 0.0f, ForceMode.Impulse);
+                                    rb.AddExplosionForce(HEForce * 2f / hitposition, this.transform.position, HERadius * 0.5f, 0.0f, ForceMode.Impulse);
+
                                 }
                             }
                         }

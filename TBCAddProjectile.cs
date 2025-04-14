@@ -24,22 +24,52 @@ namespace TBCStusSpace
         [DefaultValue(0f)]
         [Reloadable]
         public float Gravity;
+
+        [XmlElement("AmmoFunction")]
+        [DefaultValue(5f)]
+        [Reloadable]
+        public int AmmoFunction;
+
+        [XmlElement("UseMagazine")]
+        [DefaultValue(false)]
+        [Reloadable]
+        public bool UseMagazine;
+
+        [XmlElement("MagazineCapacity")]
+        [DefaultValue(null)]
+        [Reloadable]
+        public int MagazineCapacity;
+
     }
 	public class TBCAddProjectileBehaviour : BlockModuleBehaviour<TBCAddProjectile>
     {
         private AdShootingBehavour adshootingbehavour;
         private AdProjectileScript adprojectilescript;
+        private TBCProjectileController tbcprojectilecontroller;
         private GameObject projectilepool;
         private Transform projectilmultipool;
-        private TBCProjectileController tbcprojectilecontroller;
+
         public float TBCGravity;
+        public int TBCAmmoFunction = 5;
+        public int TBCAmmoStock = 10;
+        public bool start = false;
+        public bool UseMagazine = false;
+        public int MagazineCapacity;
+        public override void OnBlockPlaced()
+        {
+            base.OnBlockPlaced();
+        }
         public override void OnSimulateStart()
         {
 			base.OnSimulateStart();
 
             TBCGravity = Module.Gravity;
-            adshootingbehavour = GetComponent<AdShootingBehavour>();
+            TBCAmmoFunction = Module.AmmoFunction;
+            UseMagazine = Module.UseMagazine;
+            MagazineCapacity = Module.MagazineCapacity;
 
+            adshootingbehavour = this.GetComponent<AdShootingBehavour>();
+            //Žc’e”Ý’è
             if (StatMaster.isHosting || !StatMaster.isMP || StatMaster.isLocalSim)
             {
                 //’e‚ÉƒXƒNƒŠƒvƒg‚ð“\‚è•t‚¯‚é
@@ -100,8 +130,23 @@ namespace TBCStusSpace
             }
 
 		}
-
-	}
+        public void FixedUpdate()
+        {
+            if(start)
+            {
+                adshootingbehavour.AmmoLeft = TBCAmmoStock / TBCAmmoFunction;
+                if(UseMagazine)
+                {
+                    if(adshootingbehavour.AmmoLeft >= MagazineCapacity)
+                    {
+                        adshootingbehavour.AmmoLeft = MagazineCapacity;
+                        adshootingbehavour.AmmoStock = TBCAmmoStock / TBCAmmoFunction - MagazineCapacity;
+                    }
+                }
+                start = false;
+            }
+        }
+    }
 
     public class TBCProjectileController : ProjectileScript
     {
@@ -110,6 +155,7 @@ namespace TBCStusSpace
         private Vector3 look;
         private Quaternion lookrotation;
         public float addgravity;
+        public int time = 0;
         public void Awake() 
         {
             base.Awake();
@@ -123,11 +169,23 @@ namespace TBCStusSpace
                 rigidbody.AddForce(addgravity * gravityforce, ForceMode.Force);
             }
             if (this.rigidbody.velocity.magnitude == 0.0f)
+            {
                 return;
-
-            look = new Vector3(this.rigidbody.velocity.normalized.x, this.rigidbody.velocity.normalized.y, this.rigidbody.velocity.normalized.z);
-            lookrotation = Quaternion.LookRotation(look, Vector3.up);
-            this.transform.rotation = lookrotation;
+            }
+            else
+            {
+                if(time == 1)
+                {
+                    look = new Vector3(this.rigidbody.velocity.normalized.x, this.rigidbody.velocity.normalized.y, this.rigidbody.velocity.normalized.z);
+                    lookrotation = Quaternion.LookRotation(look, Vector3.up);
+                    this.transform.rotation = lookrotation;
+                }
+                else
+                {
+                    time++;
+                    return;
+                }
+            }
         }
         public void OnEnable()
         {

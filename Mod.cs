@@ -9,7 +9,9 @@ namespace TBCStusSpace
 {
 	public class Mod : ModEntryPoint
 	{
+		public static GameObject TBC_UI;
 		public static GameObject TBCController;
+		public static GameObject TBCGUI;
 
 		public static ModAssetBundle modAssetBundle;
 
@@ -33,12 +35,24 @@ namespace TBCStusSpace
 			Modding.Modules.CustomModules.AddBlockModule<TBCAddProjectile, TBCAddProjectileBehaviour>("TBCAddProjectile", true);
 			Modding.Modules.CustomModules.AddBlockModule<TBCAddAPModule, TBCAddAPBehaviour>("TBCAddAPModule", true);
 			Modding.Modules.CustomModules.AddBlockModule<TBCAddHEModule, TBCAddHEBehaviour>("TBCAddHEModule", true);
-
+			Modding.Modules.CustomModules.AddBlockModule<TBCAddSpotModule, TBCAddSpotBehaviour>("TBCAddSpotModule", true);
+			Modding.Modules.CustomModules.AddBlockModule<TBCAmmoUIModule, TBCAmmoUIBehaviour>("TBCAmmoUIModule", true);
 			TBCController = new GameObject("TBCController");
 			UnityEngine.Object.DontDestroyOnLoad(TBCController);
 
 			SingleInstance<AdArmorModule>.Instance.transform.parent = TBCController.transform;
-			// Called when the mod is loaded.
+			//SNB_UIを作成、Canvasを追加
+			TBC_UI = new GameObject("TBC UI");
+			UnityEngine.Object.DontDestroyOnLoad(TBC_UI);
+			Canvas val = TBC_UI.AddComponent<Canvas>();
+			val.renderMode = 0;
+			val.sortingOrder = 0;
+			val.gameObject.layer = LayerMask.NameToLayer("HUD");
+			TBC_UI.AddComponent<CanvasScaler>().scaleFactor = 1f;   //画面サイズに応じてUIをスケーリングするためのコンポーネントをアタッチする
+
+			TBCGUI = new GameObject("TBCGuiController");
+			SingleInstance<AddMachineStatusUI>.Instance.transform.parent = TBCGUI.transform;
+																	// Called when the mod is loaded.
 			switch (Application.platform)   //OS毎に変更
 			{
 				case RuntimePlatform.WindowsPlayer:
@@ -55,5 +69,6 @@ namespace TBCStusSpace
 					break;
 			}
 		}
+
 	}
 }
