@@ -16,134 +16,302 @@ using USlider = UnityEngine.UI.Slider;
 
 namespace TBCStusSpace
 {
-    public class AddMachineStatusUI : SingleInstance<AddMachineStatusUI>
+    public class GUIBlockSelector :SingleInstance<GUIBlockSelector>
     {
-        private int repeatspan = 1000;
-        private int timeElapsed = 0;
-        private int PlayerNumber = 0;
-        private int playercount = 0;
-        private BlockBehaviour PlayerNameObject;
-        private List<Player> players;
-        private int BlockPlayerID;
-        private string nametext;
-        private string[] playername;
-        private Machine machine;
-        private GameObject ChildObject;
-        private ArmorScript[] armorScript;
+        public Dictionary<int, Type> BlockDict = new Dictionary<int, Type>
+        {
+            //スタートブロック
+            {0, typeof(HaveMachineStatus) },
+        };
+        public override string Name
+        {
+            get
+            {
+                return "Addmachinestatus";
+            }
+        }
+        public void Awake()
+        {
+            Events.OnBlockInit += new Action<Block>(AddScript);
+        }
+        public void AddScript(Block block)
+        {
+            BlockBehaviour internalObject = block.BuildingBlock.InternalObject;
+
+            if(BlockDict.ContainsKey(internalObject.BlockID))
+            {
+                Type type = BlockDict[internalObject.BlockID];
+                try
+                {
+                    if(internalObject.GetComponent(type) == null)
+                    {
+                        internalObject.gameObject.AddComponent(type);
+                    }
+                }
+                catch
+                {
+                    Mod.Error("Add GUIBlockSelector Error");
+                }
+                return;
+            }
+        }
+    }
+    public class HaveMachineStatus : ModBlockBehaviour
+    {
+        private BlockBehaviour bb;
+
+        public GameObject playerObject;
+        public StorageLocation storageLocation;
+
+        private int TimeRepeat = 250;
+        private int TimeCount = 0;
+        private GameObject BuildPGameObject;
+        private GameObject GUIMachineStatusMaster;
+        private Transform GUIMSMasterT;
+        private ArmorScript[] ChildObjects;
+        private int ChildCount = 0;
         private float totalArmor = 0f;
         private float totaldispersalArmor = 0f;
-        private float[] armorAverage ;
-        private float[] armorDispersal;
-        private bool isOwnerSame = false;
-        private Rect windowRect = new Rect(0, 800, 1000, 100);
+        public float armorAverage = 25f;
+        public float armorDispersal = 0f;
+        private int BlockPlayerID =0 ;
+        private int MachineID = 0;
+        private string MachineName;
+        private List<Player> players;
+        private string PlayerName;
+        public void Awake()
+        {
+            bb = this.GetComponent<BlockBehaviour>();
+            if (bb.isBuildBlock)
+            {
+                //OnBlockPlaced();
+                
+            }
+        }
+        public void FixedUpdate()
+        {
+            if (bb.isBuildBlock)
+            {
+                BuildingInFixedUpdate();
+                
+            }
+            
+        }
+        public override void OnBlockPlaced()
+        {
+            BuildPGameObject = this.transform.parent.gameObject;
+            GUIMachineStatusMaster = GameObject.Find("TBCGuiController");
+            GUIMSMasterT = GUIMachineStatusMaster.transform.Find("TBC_GUI");
+
+            if(playerObject == null)
+            {
+                playerObject = new GameObject("Player Data");
+                playerObject.transform.parent = GUIMSMasterT.transform;
+                storageLocation = playerObject.GetComponent<StorageLocation>();
+            }
+            if(storageLocation == null)
+            {
+                playerObject.AddComponent<StorageLocation> ();
+                storageLocation = playerObject.GetComponent<StorageLocation>();
+            }
+
+            if(StatMaster.isMP)
+            {
+                BlockPlayerID = bb.ParentMachine.PlayerID;
+                MachineName = bb.ParentMachine.Name;
+            }
+            else
+            {
+                BlockPlayerID = 0;
+                MachineName = bb.ParentMachine.Name;
+            }
+            if (StatMaster.isMP)
+            {
+                players = Player.GetAllPlayers();
+                foreach (Player child in players)
+                {
+                    if (child.InternalObject.networkId == BlockPlayerID)
+                    {
+                        PlayerName = child.InternalObject.name;
+                    }
+                }
+            }
+            else
+            {
+                PlayerName = "player";
+            }
+        }
+        public void BuildingInFixedUpdate()
+        {
+            if(TimeCount >= TimeRepeat)
+            {
+                totalArmor = 0f;
+                totaldispersalArmor = 0f;
+                GetBlockStatus();
+                TimeCount = 0;
+            }
+            TimeCount += 1;
+        }
+        public void GetBlockStatus()
+        {
+            ChildObjects = BuildPGameObject.gameObject.GetComponentsInChildren<ArmorScript>();
+            ChildCount = ChildObjects.Length;
+            //平均値
+            foreach(ArmorScript ChildObject in ChildObjects)
+            {
+                totalArmor += ChildObject.armorthickness;
+            }
+            armorAverage = (float)Math.Round(totalArmor / ChildCount * 10) / 10;
+            //分散
+            foreach (ArmorScript ChildObject in ChildObjects)
+            {
+                totaldispersalArmor += (float)Math.Pow(ChildObject.armorthickness - armorAverage, 2);
+            }
+            armorDispersal = (float)Math.Round((float)Math.Pow(totaldispersalArmor / ChildCount , 0.5)* 10f) / 10f;
+            if(storageLocation != null)
+            {
+                if (StatMaster.isMP)
+                {
+                    //データを転送
+                    storageLocation.PlayerID = BlockPlayerID;
+                    storageLocation.PlayerName = PlayerName;
+                    storageLocation.MachineName = MachineName;
+                    storageLocation.armorAverage = armorAverage.ToString();
+                    storageLocation.armorDispersal = armorDispersal.ToString();
+                }
+                else
+                {
+                    storageLocation.PlayerID = BlockPlayerID;
+                    storageLocation.PlayerName = PlayerName;
+                    storageLocation.MachineName = MachineName;
+                    storageLocation.armorAverage = armorAverage.ToString();
+                    storageLocation.armorDispersal = armorDispersal.ToString();
+                }
+            }
+        }
+        public void OnDisable()
+        {
+            Destroy(playerObject);
+        }
+        public void OnEnable()
+        {
+            if (bb.isBuildBlock)
+            {
+                OnBlockPlaced();
+            }
+        }
+    }
+    public class StorageLocation : MonoBehaviour
+    {
+        public int PlayerID = 0;
+        public string PlayerName = "player";
+        public string MachineName   = "machine";
+        public string armorAverage = "25";
+        public string armorDispersal = "0";
+    }
+    public class AddMachineStatusUI : SingleInstance<AddMachineStatusUI>
+    {
+        private int playercount ;
+        private Rect windowRect ;
+        private Rect windowRect2;
+        public string[,] MachineStatus;
+        private bool windowOK;
+        private List<Player> players;
         private int windowId;
-        private Transform BuildingMachineObject; 
+        private int windowId2;
+        private int TimeCount = 0;
+        private int TimeRepeat = 100;
+        public StorageLocation storageLocation;
+        public GameObject FileBrowserView;
+        public GameObject ReturnToMenu;
+        public GameObject ServerMane;
 
         public override string Name
         {
             get
             {
-                return "TBCGUI";
+                return "TBC_GUI";
             }
         }
-        private void FixedUpdate()
+        public void FixedUpdate()
         {
-            timeElapsed += 1;
-                if (timeElapsed >= repeatspan)
+            if (TimeCount >= TimeRepeat)
+            {
+                GetBlockData();
+                TimeCount = 0;
+            }
+            TimeCount += 1;
+        }
+        public void GetBlockData()
+        {
+            if (!StatMaster.isMainMenu && !StatMaster._customLevelSimulating)
+            {
+                playercount = this.transform.childCount;
+                MachineStatus = new string[playercount, 4];
+                for (int i = 0; i < playercount; i++)
                 {
-                    StateUpdate();
-                    timeElapsed = 0;
+                    storageLocation = this.transform.GetChild(i).GetComponent<StorageLocation>();
+                    if (storageLocation != null)
+                    {
+                        MachineStatus[i, 0] = storageLocation.PlayerName;
+                        MachineStatus[i, 1] = storageLocation.MachineName;
+                        MachineStatus[i, 2] = storageLocation.armorAverage;
+                        MachineStatus[i, 3] = storageLocation.armorDispersal;
+                    }
                 }
+            }
         }
         public void Awake()
         {
-            windowId = ModUtility.GetWindowId();
-        }
-        public void Update()
-        {
-        }
-        public void StateUpdate()
-        {
-            PlayerNumber = 0;
-            players = Player.GetAllPlayers();
-            Machine[] PMachines = FindObjectsOfType<Machine>();
-            foreach (Machine PMachine in PMachines)
+            if(FileBrowserView == null)
             {
-                machine = PMachine.GetComponent<Machine>();
-                Debug.Log(machine);
-                BuildingMachineObject = PMachine.transform.Find("Building Machine");
-                Debug.Log(BuildingMachineObject);
-                //各ブロックのコンポーネントを取得と装甲平均値計算
-                for (int i = 0; i < machine.BlockCount; i++)
-                {
-                    ChildObject = BuildingMachineObject.transform.GetChild(i).gameObject;
-                    armorScript[i] = ChildObject.GetComponent<ArmorScript>();
-                    totalArmor += armorScript[i].armorthickness;
-                }
-                armorAverage[PlayerNumber] = (float)Math.Round(totalArmor / machine.BlockCount*10)/10;
-                totalArmor = 0;
-                //装甲値の分散計算
-                for (int i = 0; i < machine.BlockCount; i++)
-                {
-                    totaldispersalArmor += (float)Math.Pow(armorScript[i].armorthickness - armorAverage[PlayerNumber], 2);
-                }
-                armorDispersal[PlayerNumber] = (float)Math.Round(totaldispersalArmor / machine.BlockCount*10)/10;
-                totaldispersalArmor = 0f;
-                //プレイヤー名を取得
-                PlayerNameObject = BuildingMachineObject.transform.GetChild(0).gameObject.GetComponent<BlockBehaviour>();
-                if (StatMaster.isMP)
-                {
-                    BlockPlayerID = PlayerNameObject.ParentMachine.PlayerID;
-                }
-                else
-                {
-                    BlockPlayerID = 0;
-                }
-                players = Player.GetAllPlayers();
-
-                foreach (Player child in players)
-                {
-                    if (child.InternalObject.networkId == (ushort)BlockPlayerID)
-                    {
-                        nametext = child.InternalObject.name;
-                        playername[PlayerNumber] = nametext;
-                    }
-                }
-
-                PlayerNumber++;
+                windowId = ModUtility.GetWindowId();
+                windowId2 = ModUtility.GetWindowId();
+                FileBrowserView = GameObject.Find("HUD").transform.Find("FileBrowserView").gameObject;
+                ReturnToMenu = GameObject.Find("HUD").transform.Find("RETURN TO MENU").gameObject;
+                ServerMane = GameObject.Find("HUD").transform.Find("SERVER MANAGEMENT").gameObject;
             }
-            playercount = PlayerNumber;
         }
         public void OnGUI()
         {
-            if(!StatMaster.isMainMenu )
+            if (!StatMaster.isMainMenu && !StatMaster._customLevelSimulating && !StatMaster.isLocalSim && !FileBrowserView.activeSelf && !ReturnToMenu.activeSelf && !ServerMane.activeSelf)
             {
-                windowRect = GUILayout.Window(windowId, windowRect, delegate (int windowId)
+                windowRect2 = new Rect(550, 200, 150, 50);
+                windowRect2 = GUILayout.Window(windowId2, windowRect2, delegate
+                 {
+                    windowOK = GUILayout.Toggle(windowOK,"Open");
+                    GUI.DragWindow();
+                 }, "Status Open?");
+
+                windowRect = new Rect(750, 200, 500, 100 + 10 * playercount);
+                if(windowOK)
                 {
-                    GUILayout.BeginVertical("box");
-                    GUILayout.BeginHorizontal("box");
-
-                    GUILayout.Label("Player Name");
-                    GUILayout.Label("Armor Average");
-                    GUILayout.Label("Armor Dispersal");
-
-                    GUILayout.EndHorizontal();
-
-                    for (int i = 0; i < playercount; i++)
+                    windowRect = GUILayout.Window(windowId, windowRect, delegate (int windowId)
                     {
                         GUILayout.BeginHorizontal("box");
 
-                        GUILayout.Label(playername[i]);
-                        GUILayout.Label(armorAverage[i].ToString());
-                        GUILayout.Label(armorDispersal[i].ToString());
+                        GUILayout.Label("Player Name  ");
+                        GUILayout.Label("Machine Name  ");
+                        GUILayout.Label("Armor Average  ");
+                        GUILayout.Label("Armor Standard Deviation  ");
 
                         GUILayout.EndHorizontal();
+
+                        for (int i = 0; i < playercount; i++)
+                        {
+                            GUILayout.BeginHorizontal("box");
+
+                            GUILayout.Label(MachineStatus[i, 0]);
+                            GUILayout.Label(MachineStatus[i, 1]);
+                            GUILayout.Label(MachineStatus[i, 2] + " mm");
+                            GUILayout.Label(MachineStatus[i, 3]);
+
+                            GUILayout.EndHorizontal();
+                        }
                     }
-                    GUILayout.Label("TBCTest");
-                    GUILayout.EndVertical();
-                    GUI.DragWindow();
+                    , "Machine Status");
                 }
-                , "Machine Status");
+
             }
         }
 

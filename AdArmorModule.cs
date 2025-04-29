@@ -13,8 +13,6 @@ namespace TBCStusSpace
         //装甲スクリプト貼り付けないブロック群
         public Dictionary<int, Type> BlockDict = new Dictionary<int, Type>
         {
-            //コアブロック
-            {0, typeof(NoArmorScript) },
             //ボム
             {23, typeof(NoArmorScript) },
             //炸裂式ロケット
@@ -240,7 +238,7 @@ namespace TBCStusSpace
             base.SafeAwake();
             bb = GetComponent<BlockBehaviour>();
             //装甲厚のスライダーと値を取得
-            ArmorSlider = bb.AddSlider("Armor thickness", "armorvalue", 25f, 10f, 150f);
+            ArmorSlider = bb.AddSlider("Armor thickness", "armorvalue", 25f, 10f, 175f);
             
         }
 
@@ -253,7 +251,14 @@ namespace TBCStusSpace
             }
             if(rigidbody)
             {
-                rigidbody.mass = Dmass * armorvalue / 25f;
+                if(armorthickness >150f)
+                {
+                    rigidbody.mass = Dmass *(armorvalue / 25f * 4f - 18f);
+                }
+                else
+                {
+                    rigidbody.mass = Dmass * armorvalue / 25f;
+                }
             }
             if (jointchange)
             {

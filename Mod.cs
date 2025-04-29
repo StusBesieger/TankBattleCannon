@@ -37,10 +37,13 @@ namespace TBCStusSpace
 			Modding.Modules.CustomModules.AddBlockModule<TBCAddHEModule, TBCAddHEBehaviour>("TBCAddHEModule", true);
 			Modding.Modules.CustomModules.AddBlockModule<TBCAddSpotModule, TBCAddSpotBehaviour>("TBCAddSpotModule", true);
 			Modding.Modules.CustomModules.AddBlockModule<TBCAmmoUIModule, TBCAmmoUIBehaviour>("TBCAmmoUIModule", true);
+			Modding.Modules.CustomModules.AddBlockModule<TBCAddRangeFinderModule, TBCAddRangeFinderBehaviour>("TBCAddRangeFinderModule", true);
+			Modding.Modules.CustomModules.AddBlockModule<TBCAddFireExtinguisherModule, TBCAddFireExtinguisherBehaviour>("TBCAddFireExtinguisherModule", true);
 			TBCController = new GameObject("TBCController");
 			UnityEngine.Object.DontDestroyOnLoad(TBCController);
 
 			SingleInstance<AdArmorModule>.Instance.transform.parent = TBCController.transform;
+			SingleInstance<GUIBlockSelector>.Instance.transform.parent = TBCController.transform;
 			//SNB_UIを作成、Canvasを追加
 			TBC_UI = new GameObject("TBC UI");
 			UnityEngine.Object.DontDestroyOnLoad(TBC_UI);
@@ -51,6 +54,7 @@ namespace TBCStusSpace
 			TBC_UI.AddComponent<CanvasScaler>().scaleFactor = 1f;   //画面サイズに応じてUIをスケーリングするためのコンポーネントをアタッチする
 
 			TBCGUI = new GameObject("TBCGuiController");
+			UnityEngine.Object.DontDestroyOnLoad(TBCGUI);
 			SingleInstance<AddMachineStatusUI>.Instance.transform.parent = TBCGUI.transform;
 																	// Called when the mod is loaded.
 			switch (Application.platform)   //OS毎に変更

@@ -16,47 +16,41 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TBCStusSpace
 {
-    [XmlRoot("TBCAddSpotModule")]
+    [XmlRoot("TBCAddRangeFinderModule")]
     [Reloadable]
-    public class TBCAddSpotModule : BlockModule
+    public class TBCAddRangeFinderModule : BlockModule
     {
-        [XmlElement("SpotKey")]
+        [XmlElement("RangeFindKey")]
         [RequireToValidate]
         public MKeyReference SpotKey;
 
-        [XmlElement("SpotRange")]
+        [XmlElement("FindRange")]
         [DefaultValue(0f)]
         [Reloadable]
         public float SpotRange;
 
     }
-    public class TBCAddSpotBehaviour : BlockModuleBehaviour<TBCAddSpotModule>
+    public class TBCAddRangeFinderBehaviour : BlockModuleBehaviour<TBCAddRangeFinderModule>
     {
         public int blockID;
-        private int Spotnum = 0;
-        public string SpotEffectName;
+        private int Relaodnum = 0;
         private Vector3 ThisDirection;
-        public GameObject EffectPrefab;
-        public GameObject EffectObject;
-        public ParticleSystem particleSystem;
         public MKey SpotStart;
         public Collider mCollider;
         public float Range; 
         public LayerMask Blocklayermask = (1 << 0) | (1 << 12) | (1 << 14) | (1 << 25) | (1 << 26);
         private RaycastHit hit;
         private bool Spottrue = false;
-        private string SpotReload;
+        private string SpotReload ;
         public bool isOwnerSame = false;
         private int windowId;
-        private Rect windowRect = new Rect(375, 875, 100,50);
+        private Rect windowRect = new Rect(375, 800, 175,50);
+        private bool RangeOK = false;
+        private int RangeTime = 0;
+        private string rangeS = "No Find";
         public override void OnSimulateStart()
         {
             base.OnSimulateStart();
-            EffectPrefab = Mod.modAssetBundle.LoadAsset<GameObject>("SpotEffect");
-            EffectObject = (GameObject)Instantiate(EffectPrefab, transform);
-            particleSystem = EffectObject.GetComponent<ParticleSystem>();
-            particleSystem.Stop();
-            EffectObject.transform.position = BlockBehaviour.GetCenter();
 
             Range = Module.SpotRange;
 
@@ -94,58 +88,69 @@ namespace TBCStusSpace
                 Mod.Error("BlockID" + blockID + "error");
             }
         }
-        //キーを押されたとき、前方にスポットエフェクトを呼び出す。
+        //キーを押された時の処理。
         public override void SimulateUpdateAlways()
         {
             base.SimulateUpdateAlways();
             ThisDirection = - transform.up ;
             if (SpotStart.IsPressed || SpotStart.EmulationPressed())
             {
-                if(Spotnum == 0)
+                if(Relaodnum == 0)
                 {
                     if (Physics.SphereCast(this.transform.position + 3f * ThisDirection, 0.25f, ThisDirection, out hit, Range, Blocklayermask))
                     {
-                        StartCoroutine(PlaySpot());
+                        RangeOK = true;
 
                     }
-                    Spotnum = 1;
+                    Relaodnum = 1;
                 }
             }
-        }
-        public IEnumerator PlaySpot()
-        {
-            EffectObject.transform.position = hit.transform.position;
-            Spottrue = true;
-            yield return new WaitForSeconds(1f);
-            particleSystem.Play();
-            yield return new WaitForSeconds(10f);
-            particleSystem.Stop();
-            Spottrue = false;
         }
         public override void SimulateFixedUpdateAlways()
         {
             base.SimulateFixedUpdateAlways();
-            if(Spottrue)
+            if (Relaodnum != 0)
             {
-                EffectObject.transform.position = hit.transform.position;
-                EffectObject.transform.rotation = Quaternion.Euler(90f,0f,0f);
+                Relaodnum++;
+            }
+            if (Relaodnum == 1000)
+            {
+                Relaodnum = 0;
+            }
+            if (0 != Relaodnum)
+            {
+                SpotReload = (Relaodnum / 10).ToString() + " %";
+            }
+            if (0 == Relaodnum)
+            {
+                SpotReload = "RangeFinder OK";
+            }
+            if(RangeOK)
+            {
+                if (Physics.SphereCast(this.transform.position + 3f * ThisDirection, 0.5f, ThisDirection, out hit, Range, Blocklayermask))
+                {
+                    if(Relaodnum < 150)
+                    {
+                        RangeTime++;
+                    }
+                }
+                if(Relaodnum > 150)
+                {
+                    RangeTime = 0;
+                    RangeOK = false;
+                    rangeS = "miss!";
+                }
 
             }
-            if (Spotnum != 0)
+            if(Relaodnum == 550)
             {
-                Spotnum++;
+                rangeS = "No Find";
             }
-            if (Spotnum == 500)
+            if(RangeTime == 100)
             {
-                Spotnum = 0;
-            }
-            if (0 != Spotnum)
-            {
-                SpotReload = (Spotnum / 5).ToString() + " %";
-            }
-            if (0 == Spotnum)
-            {
-                SpotReload = "Spot OK";
+                rangeS = Math.Round(Vector3.Distance(this.transform.position, hit.point), 1).ToString();
+                RangeTime = 0;
+                RangeOK = false;
             }
         }
         public void OnGUI()
@@ -154,7 +159,14 @@ namespace TBCStusSpace
             {
                 windowRect = GUILayout.Window(windowId, windowRect, delegate (int windowId)
                 {
-                    GUILayout.Label(SpotReload);
+                GUILayout.Label(SpotReload);
+                if (RangeTime < 100 && 1 < RangeTime )
+                {
+                    GUILayout.Label(RangeTime.ToString() + " % Time limit " + ((int)(Relaodnum / 1.5)).ToString() + " %");
+                }else
+                    {
+                        GUILayout.Label(rangeS);
+                    }
                 }
                 , "Spot Reload");
             }

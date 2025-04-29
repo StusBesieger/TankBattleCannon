@@ -1,20 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
-using System.Text;
 using System.Xml.Serialization;
 using System.ComponentModel;
 using UnityEngine;
-using UnityEngine.UI;
 using Modding;
 using Modding.Serialization;
 using Modding.Modules;
-using Modding.Blocks;
 using skpCustomModule;
-using System.Collections;
 using Vector3 = UnityEngine.Vector3;
-using Random = System.Random;
+using Random = UnityEngine.Random;
 
 namespace TBCStusSpace
 {
@@ -152,6 +146,12 @@ namespace TBCStusSpace
         public LayerMask layermask = (1 << 0) | (1 << 12) | (1 << 14) | (1 << 25) | (1 << 26);
         private Vector3 APDirection;
         private RaycastHit hit;
+        public AudioSource AudioSource;
+        public AudioClip AudioClip1;
+        public AudioClip AudioClip2;
+        public AudioClip AudioClip3;
+        private int rnd;
+        
 
         public new void Awake()
         {
@@ -161,7 +161,11 @@ namespace TBCStusSpace
             adProjectileScript = this.gameObject.GetComponent<AdProjectileScript>();
             init = false;
             rigidbody = GetComponent<Rigidbody>();
-            
+            AudioSource = gameObject.GetComponent<AudioSource>();
+            AudioSource.spatialBlend = 1.0f;
+            AudioClip1 = ModResource.GetAudioClip("Ricochet_1");
+            AudioClip2 = ModResource.GetAudioClip("Ricochet_2");
+            AudioClip3 = ModResource.GetAudioClip("Ricochet_3");
         }
         public override void FixedUpdate()
         {
@@ -249,6 +253,19 @@ namespace TBCStusSpace
                     else
                     {
                         StartCoroutine(NoPenetration());
+                        rnd = Random.Range(1,4);
+                        if(rnd == 1)
+                        {
+                            AudioSource.PlayOneShot(AudioClip1);
+                        }
+                        else if(rnd == 2)
+                        {
+                            AudioSource.PlayOneShot(AudioClip2);
+                        }
+                        else if(rnd == 3)
+                        {
+                            AudioSource.PlayOneShot(AudioClip3);
+                        }
                     }
                 }
                 else if(armornumber == 2 )
@@ -259,6 +276,19 @@ namespace TBCStusSpace
             else
             {
                 StartCoroutine(NoPenetration());
+                rnd = Random.Range(1, 4);
+                if (rnd == 1)
+                {
+                    AudioSource.PlayOneShot(AudioClip1);
+                }
+                else if (rnd == 2)
+                {
+                    AudioSource.PlayOneShot(AudioClip2);
+                }
+                else if (rnd == 3)
+                {
+                    AudioSource.PlayOneShot(AudioClip3);
+                }
             }
         }
         //ä—í èàóù
