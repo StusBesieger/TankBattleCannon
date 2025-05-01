@@ -75,7 +75,6 @@ namespace TBCStusSpace
         public float armorAverage = 25f;
         public float armorDispersal = 0f;
         private int BlockPlayerID =0 ;
-        private int MachineID = 0;
         private string MachineName;
         private List<Player> players;
         private string PlayerName;
@@ -216,7 +215,6 @@ namespace TBCStusSpace
         private Rect windowRect2;
         public string[,] MachineStatus;
         private bool windowOK;
-        private List<Player> players;
         private int windowId;
         private int windowId2;
         private int TimeCount = 0;

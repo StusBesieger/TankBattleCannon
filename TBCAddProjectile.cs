@@ -192,8 +192,6 @@ namespace TBCStusSpace
         }
         public void OnCollisionEnter()
         { }
-        public void Update()
-        { }
         public void ValidCollisionOrTrigger()
         { }
     }

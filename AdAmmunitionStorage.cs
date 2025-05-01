@@ -19,7 +19,6 @@ namespace TBCStusSpace
     {
         public float Range = 10f;
         public LayerMask layermask = (1 << 0) | (1 << 12) | (1 << 14) | (1 << 25) | (1 << 26);
-        private TBCAddProjectileBehaviour TBCapb;
         private BlockBehaviour bb;
         private FireTag fireTag;
         private Rigidbody rigidbody;
@@ -64,9 +63,8 @@ namespace TBCStusSpace
             num = ChildObjects.Length;
             foreach (TBCAddProjectileBehaviour childobject in ChildObjects)
             {
-                TBCapb = childobject.GetComponent<TBCAddProjectileBehaviour>();
-                TBCapb.TBCAmmoStock += 10/num;
-                TBCapb.start = true;
+                childobject.TBCAmmoStock += 10/num;
+                childobject.start = true;
             }
         }
         public override void SimulateFixedUpdateAlways()

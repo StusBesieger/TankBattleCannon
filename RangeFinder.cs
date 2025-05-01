@@ -53,7 +53,15 @@ namespace TBCStusSpace
             base.OnSimulateStart();
 
             Range = Module.SpotRange;
-
+            blockID = BlockId;
+            try
+            {
+                SpotStart = GetKey(Module.SpotKey);
+            }
+            catch
+            {
+                Mod.Error("BlockID" + blockID + "error");
+            }
             UpdateOwnerFlag();
         }
         private void UpdateOwnerFlag()  //プレイヤーとブロックの親が一緒か確認する関数
@@ -78,15 +86,6 @@ namespace TBCStusSpace
         {
             base.SafeAwake();
             windowId = ModUtility.GetWindowId();
-            blockID = BlockId;
-            try
-            {
-                SpotStart = GetKey(Module.SpotKey);
-            }
-            catch
-            {
-                Mod.Error("BlockID" + blockID + "error");
-            }
         }
         //キーを押された時の処理。
         public override void SimulateUpdateAlways()

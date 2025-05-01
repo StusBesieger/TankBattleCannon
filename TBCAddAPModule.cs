@@ -124,6 +124,7 @@ namespace TBCStusSpace
         private ArmorScript armorScript;
         private NoArmorScript noArmorScript;
         public GameObject componentparent;
+        public GameObject componentfind;
         Collider mCollider;
         public bool init;
         public float APtime;
@@ -181,34 +182,23 @@ namespace TBCStusSpace
                 if (Physics.SphereCast(mCollider.transform.position + APDirection * 2.0f, 0.25f, APDirection, out hit, 1.5f * APFixedSp, layermask))
                 {
                     hitangle = Vector3.Angle(-1*APDirection, hit.normal);
-                    hitrigidbody = hit.collider.gameObject.transform.GetComponent<Rigidbody>();
-                    if (hitrigidbody == null)
+                    hitrigidbody = hit.collider.gameObject.GetComponent<Rigidbody>();
+                    componentfind = hit.collider.gameObject;
+                    while (hitrigidbody == null)
                     {
-                        hitrigidbody = hit.collider.gameObject.transform.parent.GetComponent<Rigidbody>();
-                        if (hitrigidbody == null)
-                        {
-                            hitrigidbody = hit.collider.gameObject.transform.parent.parent.GetComponent<Rigidbody>();
-                            if (hitrigidbody == null)
-                            {
-                                return;
-                            }
-                            else
-                            {
-                                componentparent = hit.collider.transform.parent.parent.gameObject;
-                            }
-                        }
-                        else
-                        {
-                            componentparent = hit.collider.transform.parent.gameObject;
-                        }
-                    }else
-                    {
-                        componentparent = hit.collider.gameObject;
+                        componentfind = componentfind.transform.parent.gameObject;
+                        hitrigidbody = componentfind.gameObject.GetComponent<Rigidbody>();
                     }
-                    if (hitrigidbody == null)
+                    componentparent = hit.collider.gameObject;
+                    armorScript = componentparent.gameObject.GetComponent<ArmorScript>();
+                    noArmorScript = componentparent.gameObject.GetComponent<NoArmorScript>();
+                    while (armorScript == null && noArmorScript == null)
                     {
+                        componentparent = componentparent.transform.parent.gameObject;
+                        armorScript = componentparent.gameObject.GetComponent<ArmorScript>();
+                        noArmorScript = componentparent.gameObject.GetComponent<NoArmorScript>();
                     }
-                    else
+                    if (hitrigidbody != null)
                     {
                         if(componentparent.GetComponent<ArmorScript>())
                         {

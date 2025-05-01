@@ -35,7 +35,6 @@ namespace TBCStusSpace
 	{
         private AdShootingBehavour adshootingbehavour;
         private AdExplosionEffect adprojectilescript;
-        private GameObject projectilepool;
         private Transform projectilmultipool;
         private TBCHEController tbchecontroller;
         public float TBCHEPosition;
@@ -109,7 +108,7 @@ namespace TBCStusSpace
                         rb = hitColliders[i].GetComponent<Rigidbody>();
                         if (rb)
                         {
-                            hitnumber= hitnumber + 1;
+                            hitnumber++;
                         }
                     }
                     for (int i = 0; i < hitColliders.Length; i++)

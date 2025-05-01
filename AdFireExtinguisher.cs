@@ -44,7 +44,6 @@ namespace TBCStusSpace
         public int ExtinguishingNum;
         public BlockBehaviour bb;
         public LayerMask Blocklayermask = (1 << 0) | (1 << 12) | (1 << 14) | (1 << 25) | (1 << 26);
-        private RaycastHit hit;
         private bool isOwnerSame;
         private Transform SParentObject;
         private FireTag[] firetags;
